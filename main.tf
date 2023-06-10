@@ -16,3 +16,13 @@ resource "aws_subnet" "public" {
     Name = "sub_public_${local.availability_zone_suffix[count.index]}"
   }
 }
+
+# Security Groups
+resource "aws_security_group" "default" {
+  name        = "default"
+  description = "default VPC security group"
+  vpc_id      = aws_vpc.cloudgate.id
+
+  ingress = []
+  egress  = []
+}
