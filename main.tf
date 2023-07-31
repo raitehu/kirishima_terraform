@@ -100,6 +100,49 @@ resource "aws_cloudfront_distribution" "cloudgate" {
   }
 }
 resource "aws_cloudfront_origin_access_identity" "yakan" {}
+resource "aws_cloudfront_origin_access_identity" "flowerstand_ar" {}
+
+#################
+#   フラスタAR   #
+#################
+resource "aws_s3_bucket" "flowerstand_ar" {
+  bucket = "raitehu-flowerstand-ar"
+}
+resource "aws_s3_bucket_website_configuration" "flowerstand_ar" {
+  bucket = aws_s3_bucket.flowerstand_ar.id
+
+  index_document {
+    suffix = "index.html"
+  }
+}
+resource "aws_s3_bucket_public_access_block" "flowerstand_ar" {
+  bucket = aws_s3_bucket.flowerstand_ar.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+resource "aws_s3_bucket_policy" "flowerstand_ar" {
+  bucket = aws_s3_bucket.flowerstand_ar.id
+  policy = data.aws_iam_policy_document.flowerstand_ar.json
+}
+data "aws_iam_policy_document" "flowerstand_ar" {
+  statement {
+    sid    = "Allow CloudFront"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.flowerstand_ar.iam_arn]
+    }
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = [
+      "${aws_s3_bucket.flowerstand_ar.arn}/*"
+    ]
+  }
+}
 
 #################
 #     Yakan     #
