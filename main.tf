@@ -65,11 +65,40 @@ resource "aws_cloudfront_distribution" "cloudgate" {
       origin_access_identity = aws_cloudfront_origin_access_identity.yakan.cloudfront_access_identity_path
     }
   }
+  # Origin - flowerstand AR
+  origin {
+    domain_name = aws_s3_bucket.flowerstand_ar.bucket_regional_domain_name
+    origin_id   = aws_s3_bucket.flowerstand_ar.id
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.flowerstand_ar.cloudfront_access_identity_path
+    }
+  }
+
   # Origin - app ALB
   # TODO
 
   enabled             = true
   default_root_object = "index.html"
+
+  ordered_cache_behavior {
+    path_pattern     = "/flowerstand-ar*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id = aws_s3_bucket.flowerstand_ar.id
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
