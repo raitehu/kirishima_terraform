@@ -95,8 +95,8 @@ resource "aws_cloudfront_distribution" "cloudgate" {
     }
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
+    default_ttl            = 0
+    max_ttl                = 0
   }
 
   default_cache_behavior {
@@ -229,4 +229,13 @@ resource "aws_s3_bucket_public_access_block" "terraform_backend_block_public_acc
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+module "flowerstand_ar_developers" {
+  source = "./modules/s3_upload_users"
+
+  user_names = [
+    "Tsurara",
+    "Pon"
+  ]
 }
