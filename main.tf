@@ -239,3 +239,9 @@ module "flowerstand_ar_developers" {
     "Pon"
   ]
 }
+
+module "parameter_stores" {
+  source = "./modules/parameter_stores"
+
+  tags = local.wanderers_info.tags
+}

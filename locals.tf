@@ -8,4 +8,11 @@ locals {
     "172.31.0.0/20",
     "172.31.16.0/20"
   ]
+
+  wanderers_info = {
+    backend_url = "https://wanderers-info-backend.herokuapp.com"
+    tags = {
+      Category = "wanderers_info"
+    }
+  }
 }
