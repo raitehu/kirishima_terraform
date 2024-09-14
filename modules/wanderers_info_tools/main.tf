@@ -45,6 +45,37 @@ resource "aws_scheduler_schedule" "healthcheck" {
 #############################
 #          tidy up          #
 #############################
+data "aws_s3_object" "tidy_up_zip" {
+  bucket = aws_s3_bucket.tools.bucket
+  key    = "tidy-up/lambda_function.zip"
+}
+resource "aws_lambda_function" "tidy_up" {
+  function_name = "${local.service}-tidy-up"
+  role          = aws_iam_role.lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  # SourceCode
+  s3_bucket = aws_s3_bucket.tools.bucket
+  s3_key    = data.aws_s3_object.tidy_up_zip.key
+}
+resource "aws_cloudwatch_log_group" "tidy_up" {
+  name              = "/aws/lambda/${aws_lambda_function.tidy_up.function_name}"
+  retention_in_days = 7
+}
+resource "aws_scheduler_schedule" "tidy_up" {
+  name                         = "${local.service}-tidy-up"
+  schedule_expression          = "cron(5 * * * ? *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_lambda_function.tidy_up.arn
+    role_arn = aws_iam_role.event_bridge.arn
+  }
+}
 
 #############################
 #        soon expiry        #
