@@ -22,3 +22,6 @@ output "sg_elb_id" {
 output "sg_rds_id" {
   value = aws_security_group.rds.id
 }
+output "sg_ssh_id" {
+  value = aws_security_group.ssh.id
+}

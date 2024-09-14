@@ -2,7 +2,10 @@
 #      VPC      #
 #################
 resource "aws_vpc" "cloudgate" {
-  cidr_block = var.cidr_block_vpc
+  cidr_block           = var.cidr_block_vpc
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
   tags = {
     Name = "vpc_cloudgate"
   }
@@ -15,9 +18,10 @@ resource "aws_vpc" "cloudgate" {
 resource "aws_subnet" "public" {
   count = 2
 
-  vpc_id            = aws_vpc.cloudgate.id
-  cidr_block        = var.cidr_block_public[count.index]
-  availability_zone = "${var.region}${var.availability_zone_suffix[count.index]}"
+  vpc_id                  = aws_vpc.cloudgate.id
+  cidr_block              = var.cidr_block_public[count.index]
+  availability_zone       = "${var.region}${var.availability_zone_suffix[count.index]}"
+  map_public_ip_on_launch = true
   tags = {
     Name = "sub_public_${var.availability_zone_suffix[count.index]}"
   }
@@ -77,4 +81,23 @@ resource "aws_security_group" "rds" {
   ingress = []
   egress  = []
 }
-
+resource "aws_security_group" "ssh" {
+  name   = "ssh"
+  vpc_id = aws_vpc.cloudgate.id
+}
+resource "aws_security_group_rule" "ingress_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["3.112.23.0/29"]
+  security_group_id = aws_security_group.ssh.id
+}
+resource "aws_security_group_rule" "egress_any" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = -1
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ssh.id
+}

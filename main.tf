@@ -232,3 +232,12 @@ module "wanderers_info_tools" {
   tags                       = local.wanderers_info.tags
   wanderers_info_backend_url = var.wanderers_info_backend_url
 }
+
+module "app_server" {
+  source = "./modules/app_server"
+
+  subnet_id = module.vpc.subnet_public_a_id
+  security_group_ids = [
+    module.vpc.sg_ssh_id
+  ]
+}
