@@ -7,9 +7,6 @@ variable "cidr_block_vpc" {
 variable "cidr_block_public" {
   type = list(string)
 }
-variable "cidr_block_protected" {
-  type = list(string)
-}
 variable "cidr_block_private" {
   type = list(string)
 }

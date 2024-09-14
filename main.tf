@@ -7,7 +7,6 @@ module "vpc" {
   region                   = local.region
   cidr_block_vpc           = local.cidr_block_vpc
   cidr_block_public        = local.cidr_block_public
-  cidr_block_protected     = local.cidr_block_protected
   cidr_block_private       = local.cidr_block_private
   availability_zone_suffix = local.availability_zone_suffix
 }
