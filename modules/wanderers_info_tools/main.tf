@@ -4,9 +4,43 @@ locals {
 #############################
 #        healthcheck        #
 #############################
-# TODO: Lambda
-# TODO: CloudWatch Logs
-# TODO: EventBridge
+data "aws_s3_object" "healthcheck_zip" {
+  bucket = aws_s3_bucket.tools.bucket
+  key    = "healthcheck/lambda_function.zip"
+}
+resource "aws_lambda_function" "healthcheck" {
+  function_name = "${local.service}-healthcheck"
+  role          = aws_iam_role.lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+
+  # SourceCode
+  s3_bucket = aws_s3_bucket.tools.bucket
+  s3_key    = data.aws_s3_object.healthcheck_zip.key
+  # Envs
+  environment {
+    variables = {
+      WANDERERS_INFO_BACKEND_URL = var.wanderers_info_backend_url
+    }
+  }
+}
+resource "aws_cloudwatch_log_group" "healthcheck" {
+  name              = "/aws/lambda/${aws_lambda_function.healthcheck.function_name}"
+  retention_in_days = 7
+}
+resource "aws_scheduler_schedule" "healthcheck" {
+  name                         = "${local.service}-healthcheck"
+  schedule_expression          = "cron(0,15,30,45 * * * ? *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_lambda_function.healthcheck.arn
+    role_arn = aws_iam_role.event_bridge.arn
+  }
+}
 
 #############################
 #          tidy up          #
@@ -72,6 +106,39 @@ resource "aws_iam_role_policy_attachment" "lambda_access_parameter_store" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+data "aws_iam_policy_document" "event_bridge_assume_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+data "aws_iam_policy_document" "invoke_tools" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+    resources = [
+      aws_lambda_function.healthcheck.arn,
+    ]
+  }
+}
+resource "aws_iam_policy" "invoke_tools" {
+  name   = "invoke-${local.service}-function"
+  policy = data.aws_iam_policy_document.invoke_tools.json
+}
+resource "aws_iam_role" "event_bridge" {
+  name               = "${local.service}-event-bridge"
+  assume_role_policy = data.aws_iam_policy_document.event_bridge_assume_role.json
+}
+resource "aws_iam_role_policy_attachment" "invoke_tooles" {
+  role       = aws_iam_role.event_bridge.name
+  policy_arn = aws_iam_policy.invoke_tools.arn
 }
 
 #############################

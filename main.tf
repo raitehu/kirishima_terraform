@@ -249,5 +249,6 @@ module "parameter_stores" {
 module "wanderers_info_tools" {
   source = "./modules/wanderers_info_tools"
 
-  tags = local.wanderers_info.tags
+  tags                       = local.wanderers_info.tags
+  wanderers_info_backend_url = var.wanderers_info_backend_url
 }
