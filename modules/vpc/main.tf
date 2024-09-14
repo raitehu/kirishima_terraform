@@ -63,3 +63,18 @@ resource "aws_security_group" "default" {
   ingress = []
   egress  = []
 }
+resource "aws_security_group" "elb" {
+  name   = "elb"
+  vpc_id = aws_vpc.cloudgate.id
+
+  ingress = []
+  egress  = []
+}
+resource "aws_security_group" "rds" {
+  name   = "rds"
+  vpc_id = aws_vpc.cloudgate.id
+
+  ingress = []
+  egress  = []
+}
+
