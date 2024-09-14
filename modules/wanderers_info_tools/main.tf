@@ -156,6 +156,7 @@ data "aws_iam_policy_document" "invoke_tools" {
     ]
     resources = [
       aws_lambda_function.healthcheck.arn,
+      aws_lambda_function.tidy_up.arn,
     ]
   }
 }
