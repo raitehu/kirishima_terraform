@@ -13,6 +13,7 @@ resource "aws_lambda_function" "healthcheck" {
   role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
+  timeout       = 10
 
   # SourceCode
   s3_bucket = aws_s3_bucket.tools.bucket
@@ -54,6 +55,7 @@ resource "aws_lambda_function" "tidy_up" {
   role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
+  timeout       = 10
 
   # SourceCode
   s3_bucket = aws_s3_bucket.tools.bucket
@@ -78,12 +80,81 @@ resource "aws_scheduler_schedule" "tidy_up" {
 }
 
 #############################
-#        soon expiry        #
+#       call backend        #
 #############################
+data "aws_s3_object" "call_backend" {
+  bucket = aws_s3_bucket.tools.bucket
+  key    = "call-backend/lambda_function.zip"
+}
+resource "aws_lambda_function" "call_backend" {
+  function_name = "${local.service}-call-backend"
+  role          = aws_iam_role.lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 10
 
-#############################
-#    wiki update notify     #
-#############################
+  # SourceCode
+  s3_bucket = aws_s3_bucket.tools.bucket
+  s3_key    = data.aws_s3_object.call_backend.key
+  # Envs
+  environment {
+    variables = {
+      WANDERERS_INFO_BACKEND_URL = var.wanderers_info_backend_url
+    }
+  }
+}
+resource "aws_cloudwatch_log_group" "call_backend" {
+  name              = "/aws/lambda/${aws_lambda_function.call_backend.function_name}"
+  retention_in_days = 7
+}
+resource "aws_scheduler_schedule" "garland_daily" {
+  name                         = "${local.service}-garland-daily"
+  schedule_expression          = "cron(30 7 ? * MON,FRI *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_lambda_function.call_backend.arn
+    role_arn = aws_iam_role.event_bridge.arn
+    input = jsonencode({
+      function = "/v1/garland/daily/"
+    })
+  }
+}
+resource "aws_scheduler_schedule" "garland_soon_expiry" {
+  name                         = "${local.service}-garland-soon-expiry"
+  schedule_expression          = "cron(15 * * * ? *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_lambda_function.call_backend.arn
+    role_arn = aws_iam_role.event_bridge.arn
+    input = jsonencode({
+      function = "/v1/garland/soon-expiry/"
+    })
+  }
+}
+resource "aws_scheduler_schedule" "wiki_update_notify" {
+  name                         = "${local.service}-wiki-update-notify"
+  schedule_expression          = "cron(0 7 * * ? *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+  target {
+    arn      = aws_lambda_function.call_backend.arn
+    role_arn = aws_iam_role.event_bridge.arn
+    input = jsonencode({
+      function = "/v1/wiki/update-notify/"
+    })
+  }
+}
 
 #############################
 #          common           #
@@ -157,6 +228,7 @@ data "aws_iam_policy_document" "invoke_tools" {
     resources = [
       aws_lambda_function.healthcheck.arn,
       aws_lambda_function.tidy_up.arn,
+      aws_lambda_function.call_backend.arn,
     ]
   }
 }
