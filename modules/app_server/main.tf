@@ -2,10 +2,10 @@ data "aws_ssm_parameter" "amazinlinux_2023" {
   name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64"
 }
 
-resource "aws_instance" "kongoh" {
-  ami = data.aws_ssm_parameter.amazinlinux_2023.value
-  # instance_type = "t3.micro"
-  instance_type          = "c7a.large"
+resource "aws_instance" "app" {
+  ami           = data.aws_ssm_parameter.amazinlinux_2023.value
+  instance_type = "t3.micro"
+  # instance_type          = "c7a.large"
   subnet_id              = var.subnet_id
   vpc_security_group_ids = var.security_group_ids
   key_name               = "ec2"
@@ -16,7 +16,7 @@ resource "aws_instance" "kongoh" {
   }
 
   tags = {
-    Name = "kongoh"
+    Name = "app"
   }
 
   lifecycle {
