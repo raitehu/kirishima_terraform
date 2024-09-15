@@ -215,6 +215,18 @@ module "wanderers_info_tools" {
   wanderers_info_backend_url = var.wanderers_info_backend_url
 }
 
+module "app_network" {
+  source = "./modules/app_network"
+
+  subnet_ids = [
+    module.vpc.subnet_public_a_id,
+    module.vpc.subnet_private_c_id
+  ]
+  security_group_ids = [
+    module.vpc.sg_elb_id
+  ]
+}
+
 module "app_server" {
   source = "./modules/app_server"
 
