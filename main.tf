@@ -238,6 +238,7 @@ module "app_server" {
 
   subnet_id = module.vpc.subnet_public_a_id
   security_group_ids = [
-    module.vpc.sg_ssh_id
+    module.vpc.sg_ssh_id,
+    module.vpc.sg_elb_id
   ]
 }

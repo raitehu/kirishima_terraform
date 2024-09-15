@@ -3,8 +3,9 @@ data "aws_ssm_parameter" "amazinlinux_2023" {
 }
 
 resource "aws_instance" "kongoh" {
-  ami                    = data.aws_ssm_parameter.amazinlinux_2023.value
-  instance_type          = "t3.micro"
+  ami = data.aws_ssm_parameter.amazinlinux_2023.value
+  # instance_type = "t3.micro"
+  instance_type          = "c7a.large"
   subnet_id              = var.subnet_id
   vpc_security_group_ids = var.security_group_ids
   key_name               = "ec2"
