@@ -1,4 +1,13 @@
 #################
+#   Terraform   #
+#################
+module "s3_terraformbackend" {
+  source = "./modules/s3"
+
+  bucket = "cloudgate-terraform-backend"
+}
+
+#################
 #      VPC      #
 #################
 module "vpc" {
@@ -21,18 +30,18 @@ module "route53" {
 resource "aws_cloudfront_distribution" "cloudgate" {
   # Origin - yakan
   origin {
-    domain_name = aws_s3_bucket.yakan.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.yakan.id
+    domain_name = module.s3_yakan.bucket_domain_name
+    origin_id   = module.s3_yakan.bucket_id
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.yakan.cloudfront_access_identity_path
+      origin_access_identity = module.s3_yakan.OAI_access_identity_path
     }
   }
   # Origin - flowerstand AR
   origin {
-    domain_name = aws_s3_bucket.flowerstand_ar.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.flowerstand_ar.id
+    domain_name = module.s3_flowerstand_ar.bucket_domain_name
+    origin_id   = module.s3_flowerstand_ar.bucket_id
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.flowerstand_ar.cloudfront_access_identity_path
+      origin_access_identity = module.s3_flowerstand_ar.OAI_access_identity_path
     }
   }
 
@@ -46,7 +55,7 @@ resource "aws_cloudfront_distribution" "cloudgate" {
     path_pattern     = "/flowerstand-ar*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = aws_s3_bucket.flowerstand_ar.id
+    target_origin_id = module.s3_flowerstand_ar.bucket_id
 
     forwarded_values {
       query_string = false
@@ -64,7 +73,7 @@ resource "aws_cloudfront_distribution" "cloudgate" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = aws_s3_bucket.yakan.id
+    target_origin_id = module.s3_yakan.bucket_id
 
     forwarded_values {
       query_string = false
@@ -90,109 +99,15 @@ resource "aws_cloudfront_distribution" "cloudgate" {
     cloudfront_default_certificate = true
   }
 }
-resource "aws_cloudfront_origin_access_identity" "yakan" {}
-resource "aws_cloudfront_origin_access_identity" "flowerstand_ar" {}
 
 #################
 #   フラスタAR   #
 #################
-resource "aws_s3_bucket" "flowerstand_ar" {
+module "s3_flowerstand_ar" {
+  source = "./modules/s3_via_cloudfront"
+
   bucket = "raitehu-flowerstand-ar"
 }
-resource "aws_s3_bucket_website_configuration" "flowerstand_ar" {
-  bucket = aws_s3_bucket.flowerstand_ar.id
-
-  index_document {
-    suffix = "index.html"
-  }
-}
-resource "aws_s3_bucket_public_access_block" "flowerstand_ar" {
-  bucket = aws_s3_bucket.flowerstand_ar.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-resource "aws_s3_bucket_policy" "flowerstand_ar" {
-  bucket = aws_s3_bucket.flowerstand_ar.id
-  policy = data.aws_iam_policy_document.flowerstand_ar.json
-}
-data "aws_iam_policy_document" "flowerstand_ar" {
-  statement {
-    sid    = "Allow CloudFront"
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.flowerstand_ar.iam_arn]
-    }
-    actions = [
-      "s3:GetObject"
-    ]
-    resources = [
-      "${aws_s3_bucket.flowerstand_ar.arn}/*"
-    ]
-  }
-}
-
-#################
-#     Yakan     #
-#################
-resource "aws_s3_bucket" "yakan" {
-  bucket = "yakan-static"
-}
-resource "aws_s3_bucket_website_configuration" "yakan" {
-  bucket = aws_s3_bucket.yakan.id
-
-  index_document {
-    suffix = "index.html"
-  }
-}
-resource "aws_s3_bucket_public_access_block" "yakan" {
-  bucket = aws_s3_bucket.yakan.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-resource "aws_s3_bucket_policy" "yakan" {
-  bucket = aws_s3_bucket.yakan.id
-  policy = data.aws_iam_policy_document.yakan.json
-}
-data "aws_iam_policy_document" "yakan" {
-  statement {
-    sid    = "Allow CloudFront"
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.yakan.iam_arn]
-    }
-    actions = [
-      "s3:GetObject"
-    ]
-    resources = [
-      "${aws_s3_bucket.yakan.arn}/*"
-    ]
-  }
-}
-
-#################
-#   Terraform   #
-#################
-resource "aws_s3_bucket" "terraform_backend" {
-  bucket = "cloudgate-terraform-backend"
-}
-
-resource "aws_s3_bucket_public_access_block" "terraform_backend_block_public_access" {
-  bucket = aws_s3_bucket.terraform_backend.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
 module "flowerstand_ar_developers" {
   source = "./modules/s3_upload_users"
 
@@ -200,6 +115,15 @@ module "flowerstand_ar_developers" {
     "Tsurara",
     "Pon"
   ]
+}
+
+#################
+#     Yakan     #
+#################
+module "s3_yakan" {
+  source = "./modules/s3_via_cloudfront"
+
+  bucket = "yakan-static"
 }
 
 module "parameter_stores" {
