@@ -90,9 +90,22 @@ resource "aws_security_group_rule" "egress_elb_any" {
 resource "aws_security_group" "rds" {
   name   = "rds"
   vpc_id = aws_vpc.cloudgate.id
-
-  ingress = []
-  egress  = []
+}
+resource "aws_security_group_rule" "ingress_rds" {
+  type              = "ingress"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.elb.id
+}
+resource "aws_security_group_rule" "egress_rds_any" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = -1
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.rds.id
 }
 resource "aws_security_group" "ssh" {
   name   = "ssh"
