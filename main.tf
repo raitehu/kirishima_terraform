@@ -22,7 +22,9 @@ module "vpc" {
 module "route53" {
   source = "./modules/route53"
 
-  on_premises_ip = var.on_premises_ip
+  on_premises_ip         = var.on_premises_ip
+  web_front_alb_dns_name = module.app_network.web_front_alb_dns_name
+  web_front_alb_zone_id  = module.app_network.web_front_alb_zone_id
 }
 module "parameter_stores" {
   source = "./modules/parameter_stores"
