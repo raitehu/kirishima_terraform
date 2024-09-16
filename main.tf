@@ -22,9 +22,10 @@ module "vpc" {
 module "route53" {
   source = "./modules/route53"
 
-  on_premises_ip         = var.on_premises_ip
-  web_front_alb_dns_name = module.app_network.web_front_alb_dns_name
-  web_front_alb_zone_id  = module.app_network.web_front_alb_zone_id
+  web_front_alb_dns_name    = module.app_network.web_front_alb_dns_name
+  web_front_alb_zone_id     = module.app_network.web_front_alb_zone_id
+  cloudfront_yakan_dns_name = module.yakan_network.cloudfront_dns_name
+  cloudfront_yakan_zone_id  = module.yakan_network.cloudfront_zone_id
 }
 module "parameter_stores" {
   source = "./modules/parameter_stores"
@@ -59,6 +60,14 @@ data "aws_iam_policy_document" "alb_logs" {
 #################
 #     Yakan     #
 #################
+module "yakan_network" {
+  source = "./modules/yakan_network"
+
+  s3_bucket_id_yakan          = module.s3_yakan.bucket_id
+  s3_bucket_domain_name_yakan = module.s3_yakan.bucket_domain_name
+  s3_OAI_path_yakan           = module.s3_yakan.OAI_access_identity_path
+  acm_certificate_arn         = var.kongoh_acm_arn_in_us
+}
 module "s3_yakan" {
   source = "./modules/s3_via_cloudfront"
 
@@ -114,9 +123,6 @@ module "wanderers_info_tools" {
 module "flowerstand_ar_network" {
   source = "./modules/flowerstand_ar_network"
 
-  s3_bucket_id_yakan                   = module.s3_yakan.bucket_id
-  s3_bucket_domain_name_yakan          = module.s3_yakan.bucket_domain_name
-  s3_OAI_path_yakan                    = module.s3_yakan.OAI_access_identity_path
   s3_bucket_id_flowerstand_ar          = module.s3_flowerstand_ar.bucket_id
   s3_bucket_domain_name_flowerstand_ar = module.s3_flowerstand_ar.bucket_domain_name
   s3_OAI_path_flowerstand_ar           = module.s3_flowerstand_ar.OAI_access_identity_path
