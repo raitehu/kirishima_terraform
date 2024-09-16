@@ -29,6 +29,30 @@ module "parameter_stores" {
 
   tags = local.wanderers_info.tags
 }
+module "alb_logs" {
+  source = "./modules/s3"
+
+  bucket = "raitehu-alb-logs"
+}
+resource "aws_s3_bucket_policy" "alb_logs" {
+  bucket = module.alb_logs.bucket_id
+  policy = data.aws_iam_policy_document.alb_logs.json
+}
+data "aws_iam_policy_document" "alb_logs" {
+  statement {
+    effect = "Allow"
+    principals {
+      type = "AWS"
+      # アカウントIDは対応するリージョンのELBのもの
+      # ap-northeast-1のELBは582318560864
+      identifiers = ["arn:aws:iam::582318560864:root"]
+    }
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = ["${module.alb_logs.bucket_arn}/*"]
+  }
+}
 
 #################
 #     Yakan     #
@@ -45,6 +69,11 @@ module "s3_yakan" {
 module "app_network" {
   source = "./modules/app_network"
 
+  # 証明書
+  kongoh_acm_arn         = var.kongoh_acm_arn
+  pleiades_union_acm_arn = var.pleiades_union_acm_arn
+
+  vpc_id = module.vpc.vpc_id
   subnet_ids = [
     module.vpc.subnet_public_a_id,
     module.vpc.subnet_private_c_id
@@ -52,6 +81,8 @@ module "app_network" {
   security_group_ids = [
     module.vpc.sg_elb_id
   ]
+  alb_log_bucket_id = module.alb_logs.bucket_id
+  app_server_id     = module.app_server.app_server_id
 }
 
 module "app_server" {
