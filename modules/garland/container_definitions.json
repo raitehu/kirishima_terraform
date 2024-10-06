@@ -1,0 +1,45 @@
+[
+  {
+    "name": "${container_name}",
+    "image": "${ecr_image_url}:latest",
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group}",
+        "awslogs-region": "ap-northeast-1",
+        "awslogs-stream-prefix": "${container_name}"
+      }
+    },
+    "portMappings": [
+      {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+      }
+    ],
+    "environment": [
+      {
+        "name": "TABLE_NAME",
+        "value": "${TABLE_NAME}"
+      },
+      {
+        "name": "REGION",
+        "value": "${REGION}"
+      },
+      {
+        "name": "DYNAMODB_ENDPOINT",
+        "value": "${DYNAMODB_ENDPOINT}"
+      }
+    ],
+    "secrets": [
+      {
+        "name": "ACCESS_KEY_ID_ARN",
+        "valueFrom": "${ACCESS_KEY_ID_ARN}"
+      },
+      {
+        "name": "SECRET_ACCESS_KEY_ARN",
+        "valueFrom": "${SECRET_ACCESS_KEY_ARN}"
+      }
+    ]
+  }
+]

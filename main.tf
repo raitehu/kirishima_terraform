@@ -56,6 +56,12 @@ data "aws_iam_policy_document" "alb_logs" {
     resources = ["${module.alb_logs.bucket_arn}/*"]
   }
 }
+resource "aws_ecs_cluster" "prd" {
+  name = "prd"
+}
+resource "aws_ecs_cluster" "stg" {
+  name = "stg"
+}
 
 #################
 #     Yakan     #
@@ -83,6 +89,7 @@ module "app_network" {
   # 証明書
   kongoh_acm_arn         = var.kongoh_acm_arn
   pleiades_union_acm_arn = var.pleiades_union_acm_arn
+  raitehu_acm_arn        = var.raitehu_acm_arn
 
   vpc_id = module.vpc.vpc_id
   subnet_ids = [
@@ -104,6 +111,32 @@ module "app_server" {
     module.vpc.sg_ssh_id,
     module.vpc.sg_elb_id
   ]
+}
+
+module "garland_iam" {
+  source = "./modules/garland_iam"
+}
+module "prd-garland" {
+  source = "./modules/garland"
+
+  env                     = "prd"
+  cluster_id              = aws_ecs_cluster.prd.id
+  subnet_ids              = [module.vpc.subnet_public_a_id, module.vpc.subnet_public_c_id]
+  security_group_ids      = [module.vpc.sg_elb_id]
+  target_group_arn        = module.app_network.tg_arn_garland_prd
+  task_execution_role_arn = module.garland_iam.task_execution_role_arn
+  task_role_arn           = module.garland_iam.task_role_arn
+}
+module "stg-garland" {
+  source = "./modules/garland"
+
+  env                     = "stg"
+  cluster_id              = aws_ecs_cluster.stg.id
+  subnet_ids              = [module.vpc.subnet_public_a_id, module.vpc.subnet_public_c_id]
+  security_group_ids      = [module.vpc.sg_elb_id]
+  target_group_arn        = module.app_network.tg_arn_garland_stg
+  task_execution_role_arn = module.garland_iam.task_execution_role_arn
+  task_role_arn           = module.garland_iam.task_role_arn
 }
 
 #################

@@ -11,3 +11,6 @@ variable "kongoh_acm_arn" {
 variable "pleiades_union_acm_arn" {
   type = string
 }
+variable "raitehu_acm_arn" {
+  type = string
+}

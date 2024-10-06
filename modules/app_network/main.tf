@@ -55,6 +55,10 @@ resource "aws_lb_listener_certificate" "pleiades" {
   listener_arn    = aws_lb_listener.https.arn
   certificate_arn = var.pleiades_union_acm_arn
 }
+resource "aws_lb_listener_certificate" "raitehu" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = var.raitehu_acm_arn
+}
 ###################
 #    moneybook    #
 ###################
@@ -123,6 +127,61 @@ resource "aws_lb_listener_rule" "kongoh" {
 
   tags = {
     Name = "kongoh"
+  }
+}
+###################
+#     garland     #
+###################
+resource "aws_lb_target_group" "garland_prd" {
+  name        = "prd-garland"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+}
+resource "aws_lb_target_group" "garland_stg" {
+  name        = "stg-garland"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+}
+resource "aws_lb_listener_rule" "garland_stg" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 300
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.garland_stg.arn
+  }
+
+  condition {
+    host_header {
+      values = ["garland-stg.raitehu.com"]
+    }
+  }
+
+  tags = {
+    Name = "garland_stg"
+  }
+}
+resource "aws_lb_listener_rule" "garland_prd" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 350
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.garland_prd.arn
+  }
+
+  condition {
+    host_header {
+      values = ["garland.raitehu.com"]
+    }
+  }
+
+  tags = {
+    Name = "garland_prd"
   }
 }
 ###################

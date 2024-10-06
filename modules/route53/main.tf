@@ -62,3 +62,29 @@ resource "aws_route53_record" "moneybook" {
     evaluate_target_health = true
   }
 }
+# raitehu.com
+resource "aws_route53_zone" "raitehu" {
+  name = "raitehu.com"
+}
+resource "aws_route53_record" "raitehu_A_garland_prd" {
+  zone_id = aws_route53_zone.raitehu.zone_id
+  name    = "garland.raitehu.com"
+  type    = "A"
+
+  alias {
+    name                   = var.web_front_alb_dns_name
+    zone_id                = var.web_front_alb_zone_id
+    evaluate_target_health = true
+  }
+}
+resource "aws_route53_record" "raitehu_A_garland_stg" {
+  zone_id = aws_route53_zone.raitehu.zone_id
+  name    = "garland-stg.raitehu.com"
+  type    = "A"
+
+  alias {
+    name                   = var.web_front_alb_dns_name
+    zone_id                = var.web_front_alb_zone_id
+    evaluate_target_health = true
+  }
+}

@@ -71,6 +71,14 @@ resource "aws_security_group" "elb" {
   name   = "elb"
   vpc_id = aws_vpc.cloudgate.id
 }
+resource "aws_security_group_rule" "ingress_elb_self" {
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 0
+  self              = true
+  protocol          = "-1"
+  security_group_id = aws_security_group.elb.id
+}
 resource "aws_security_group_rule" "ingress_elb_http" {
   type              = "ingress"
   from_port         = 80
