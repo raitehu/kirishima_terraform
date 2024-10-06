@@ -33,11 +33,11 @@
     ],
     "secrets": [
       {
-        "name": "ACCESS_KEY_ID_ARN",
+        "name": "ACCESS_KEY_ID",
         "valueFrom": "${ACCESS_KEY_ID_ARN}"
       },
       {
-        "name": "SECRET_ACCESS_KEY_ARN",
+        "name": "SECRET_ACCESS_KEY",
         "valueFrom": "${SECRET_ACCESS_KEY_ARN}"
       }
     ]
