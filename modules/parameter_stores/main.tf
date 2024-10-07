@@ -21,3 +21,23 @@ resource "aws_ssm_parameter" "garland_backend_url" {
     ignore_changes = [value]
   }
 }
+
+resource "aws_ssm_parameter" "dockerhub_user" {
+  name  = "dockerhub-user"
+  type  = "SecureString"
+  value = "dummy"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
+
+resource "aws_ssm_parameter" "dockerhub_token" {
+  name  = "dockerhub-token"
+  type  = "SecureString"
+  value = "dummy"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}

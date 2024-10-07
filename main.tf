@@ -62,6 +62,15 @@ resource "aws_ecs_cluster" "prd" {
 resource "aws_ecs_cluster" "stg" {
   name = "stg"
 }
+resource "aws_codestarconnections_connection" "github" {
+  name          = "github"
+  provider_type = "GitHub"
+}
+module "artifact_store" {
+  source = "./modules/s3"
+
+  bucket = "raitehu-artifact-store"
+}
 
 #################
 #     Yakan     #
@@ -137,6 +146,18 @@ module "stg-garland" {
   target_group_arn        = module.app_network.tg_arn_garland_stg
   task_execution_role_arn = module.garland_iam.task_execution_role_arn
   task_role_arn           = module.garland_iam.task_role_arn
+}
+module "prd-garland-cicd" {
+  source = "./modules/garland_cicd"
+
+  env                       = "prd"
+  codestar_connections_arn  = aws_codestarconnections_connection.github.arn
+  artifact_store_bucket     = module.artifact_store.bucket
+  env_ecr_image_url         = module.prd-garland.ecr_image_url
+  env_log_group             = module.prd-garland.log_group
+  env_table_name            = module.prd-garland.table_name
+  env_access_key_id_arn     = module.prd-garland.access_key_id_arn
+  env_secret_access_key_arn = module.prd-garland.secret_access_key_arn
 }
 
 #################
