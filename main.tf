@@ -150,14 +150,20 @@ module "stg-garland" {
 module "prd-garland-cicd" {
   source = "./modules/garland_cicd"
 
-  env                       = "prd"
-  codestar_connections_arn  = aws_codestarconnections_connection.github.arn
-  artifact_store_bucket     = module.artifact_store.bucket
-  env_ecr_image_url         = module.prd-garland.ecr_image_url
-  env_log_group             = module.prd-garland.log_group
-  env_table_name            = module.prd-garland.table_name
-  env_access_key_id_arn     = module.prd-garland.access_key_id_arn
-  env_secret_access_key_arn = module.prd-garland.secret_access_key_arn
+  env                         = "prd"
+  codestar_connections_arn    = aws_codestarconnections_connection.github.arn
+  artifact_store_bucket       = module.artifact_store.bucket
+  listener_arn_active         = module.app_network.listener_arn_https
+  listener_arn_standby        = module.app_network.listener_arn_https_standby
+  tg_name_blue                = module.app_network.tg_name_garland_prd_blue
+  tg_name_green               = module.app_network.tg_name_garland_prd_green
+  env_ecr_image_url           = module.prd-garland.ecr_image_url
+  env_log_group               = module.prd-garland.log_group
+  env_table_name              = module.prd-garland.table_name
+  env_access_key_id_arn       = module.prd-garland.access_key_id_arn
+  env_secret_access_key_arn   = module.prd-garland.secret_access_key_arn
+  env_task_role_arn           = module.garland_iam.task_role_arn
+  env_task_execution_role_arn = module.garland_iam.task_execution_role_arn
 }
 
 #################

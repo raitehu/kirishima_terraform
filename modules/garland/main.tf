@@ -30,9 +30,9 @@ resource "aws_ecs_service" "garland" {
     assign_public_ip = true
   }
 
-  # deployment_controller {
-  #   type = "CODE_DEPLOY"
-  # }
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
 
   load_balancer {
     target_group_arn = var.target_group_arn
@@ -87,8 +87,6 @@ resource "aws_ecs_task_definition" "default" {
     ]
   }
 }
-
-# TODO CodeXxxx
 
 #######################
 #      DynamoDB       #

@@ -51,12 +51,37 @@ resource "aws_lb_listener" "https" {
     }
   }
 }
+resource "aws_lb_listener" "https_standby" {
+  load_balancer_arn = aws_lb.web-front.arn
+  port              = "8443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.kongoh_acm_arn
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Not Found"
+      status_code  = "404"
+    }
+  }
+}
 resource "aws_lb_listener_certificate" "pleiades" {
   listener_arn    = aws_lb_listener.https.arn
   certificate_arn = var.pleiades_union_acm_arn
 }
 resource "aws_lb_listener_certificate" "raitehu" {
   listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = var.raitehu_acm_arn
+}
+resource "aws_lb_listener_certificate" "pleiades_standby" {
+  listener_arn    = aws_lb_listener.https_standby.arn
+  certificate_arn = var.pleiades_union_acm_arn
+}
+resource "aws_lb_listener_certificate" "raitehu_standby" {
+  listener_arn    = aws_lb_listener.https_standby.arn
   certificate_arn = var.raitehu_acm_arn
 }
 ###################
@@ -132,19 +157,79 @@ resource "aws_lb_listener_rule" "kongoh" {
 ###################
 #     garland     #
 ###################
-resource "aws_lb_target_group" "garland_prd" {
-  name        = "prd-garland"
+resource "aws_lb_target_group" "garland_prd_blue" {
+  name        = "prd-garland-blue"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
 }
-resource "aws_lb_target_group" "garland_stg" {
-  name        = "stg-garland"
+resource "aws_lb_target_group" "garland_prd_green" {
+  name        = "prd-garland-green"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
+}
+resource "aws_lb_target_group" "garland_stg_blue" {
+  name        = "stg-garland-blue"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+}
+resource "aws_lb_target_group" "garland_stg_green" {
+  name        = "stg-garland-green"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+}
+resource "aws_lb_listener_rule" "garland_prd" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 350
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.garland_prd_blue.arn
+  }
+
+  condition {
+    host_header {
+      values = ["garland.raitehu.com"]
+    }
+  }
+
+  tags = {
+    Name = "garland_prd"
+  }
+
+  lifecycle {
+    ignore_changes = [action]
+  }
+}
+resource "aws_lb_listener_rule" "garland_prd_standby" {
+  listener_arn = aws_lb_listener.https_standby.arn
+  priority     = 350
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.garland_prd_green.arn
+  }
+
+  condition {
+    host_header {
+      values = ["garland.raitehu.com"]
+    }
+  }
+
+  tags = {
+    Name = "garland_prd"
+  }
+
+  lifecycle {
+    ignore_changes = [action]
+  }
 }
 resource "aws_lb_listener_rule" "garland_stg" {
   listener_arn = aws_lb_listener.https.arn
@@ -152,7 +237,7 @@ resource "aws_lb_listener_rule" "garland_stg" {
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.garland_stg.arn
+    target_group_arn = aws_lb_target_group.garland_stg_blue.arn
   }
 
   condition {
@@ -164,24 +249,32 @@ resource "aws_lb_listener_rule" "garland_stg" {
   tags = {
     Name = "garland_stg"
   }
+
+  lifecycle {
+    ignore_changes = [action]
+  }
 }
-resource "aws_lb_listener_rule" "garland_prd" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 350
+resource "aws_lb_listener_rule" "garland_stg_standby" {
+  listener_arn = aws_lb_listener.https_standby.arn
+  priority     = 300
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.garland_prd.arn
+    target_group_arn = aws_lb_target_group.garland_stg_green.arn
   }
 
   condition {
     host_header {
-      values = ["garland.raitehu.com"]
+      values = ["garland-stg.raitehu.com"]
     }
   }
 
   tags = {
-    Name = "garland_prd"
+    Name = "garland_stg"
+  }
+
+  lifecycle {
+    ignore_changes = [action]
   }
 }
 ###################

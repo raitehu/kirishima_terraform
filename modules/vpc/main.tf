@@ -95,6 +95,14 @@ resource "aws_security_group_rule" "ingress_elb_https" {
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.elb.id
 }
+resource "aws_security_group_rule" "ingress_elb_https_test" {
+  type              = "ingress"
+  from_port         = 8443
+  to_port           = 8443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.elb.id
+}
 resource "aws_security_group_rule" "ingress_elb_rails" {
   type              = "ingress"
   from_port         = 3000

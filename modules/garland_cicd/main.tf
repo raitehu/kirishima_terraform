@@ -51,6 +51,30 @@ resource "aws_codepipeline" "default" {
       }
     }
   }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "CodeDeployToECS"
+      version         = 1
+      run_order       = 1
+      input_artifacts = ["${var.env}_garland_build"]
+      configuration = {
+        ApplicationName                = aws_codedeploy_app.default.name
+        DeploymentGroupName            = aws_codedeploy_deployment_group.default.deployment_group_name
+        TaskDefinitionTemplateArtifact = "${var.env}_garland_build"
+        TaskDefinitionTemplatePath     = "taskdef.json"
+        AppSpecTemplateArtifact        = "${var.env}_garland_build"
+        AppSpecTemplatePath            = "appspec.yml"
+        Image1ArtifactName             = "${var.env}_garland_build"
+        Image1ContainerName            = "IMAGE1_NAME"
+      }
+    }
+  }
 }
 
 #######################
@@ -81,10 +105,6 @@ resource "aws_codebuild_project" "default" {
       value = var.env
     }
     environment_variable {
-      name  = "ECR_IMAGE_URL"
-      value = var.env_ecr_image_url
-    }
-    environment_variable {
       name  = "LOG_GROUP"
       value = var.env_log_group
     }
@@ -100,8 +120,75 @@ resource "aws_codebuild_project" "default" {
       name  = "SECRET_ACCESS_KEY_ARN"
       value = var.env_secret_access_key_arn
     }
+    environment_variable {
+      name  = "TASK_ROLE_ARN"
+      value = var.env_task_role_arn
+    }
+    environment_variable {
+      name  = "TASK_EXECUTION_ROLE_ARN"
+      value = var.env_task_execution_role_arn
+    }
   }
 }
+
+#######################
+#      CodeDeploy     #
+#######################
+resource "aws_codedeploy_app" "default" {
+  name             = "${var.env}-${local.service_name}"
+  compute_platform = "ECS"
+}
+resource "aws_codedeploy_deployment_group" "default" {
+  deployment_group_name  = "${var.env}-${local.service_name}-deploy"
+  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+  app_name               = aws_codedeploy_app.default.name
+  service_role_arn       = aws_iam_role.codedeploy.arn
+
+  deployment_style {
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
+  }
+
+  blue_green_deployment_config {
+    deployment_ready_option {
+      action_on_timeout    = "STOP_DEPLOYMENT"
+      wait_time_in_minutes = 10
+    }
+
+    terminate_blue_instances_on_deployment_success {
+      action                           = "TERMINATE"
+      termination_wait_time_in_minutes = 10
+    }
+  }
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  ecs_service {
+    cluster_name = var.env
+    service_name = local.service_name
+  }
+
+  load_balancer_info {
+    target_group_pair_info {
+      prod_traffic_route {
+        listener_arns = [var.listener_arn_active]
+      }
+      test_traffic_route {
+        listener_arns = [var.listener_arn_standby]
+      }
+      target_group {
+        name = var.tg_name_blue
+      }
+      target_group {
+        name = var.tg_name_green
+      }
+    }
+  }
+}
+
 #######################
 #         IAM         #
 #######################
@@ -328,5 +415,103 @@ data "aws_iam_policy_document" "codebuild_inline_policy" {
     ]
   }
 }
-
 # CodeDeploy
+resource "aws_iam_role" "codedeploy" {
+  name               = "${var.env}-${local.service_name}-codedeploy"
+  assume_role_policy = data.aws_iam_policy_document.codedeploy_assume_role_policy.json
+}
+data "aws_iam_policy_document" "codedeploy_assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["codedeploy.amazonaws.com"]
+    }
+  }
+}
+resource "aws_iam_role_policy" "codedeploy" {
+  name   = "${var.env}-${local.service_name}-codedeploy"
+  role   = aws_iam_role.codedeploy.id
+  policy = data.aws_iam_policy_document.codedeploy_inline_policy.json
+}
+data "aws_iam_policy_document" "codedeploy_inline_policy" {
+  statement {
+    sid = "IAM"
+    actions = [
+      "iam:PassRole",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    sid = "CloudWatch"
+    actions = [
+      "logs:PutLogEvents",
+      "logs:CreateLogStream",
+      "logs:CreateLogGroup",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+  statement {
+    sid = "ECS"
+    actions = [
+      "ecs:CreateTaskSet",
+      "ecs:DescribeTaskDefinition",
+      "ecs:DescribeServices",
+      "ecs:UpdateServicePrimaryTaskSet",
+      "ecs:DeleteTaskSet",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    sid = "ECR"
+    actions = [
+      "ecr:UploadLayerPart",
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:GetAuthorizationToken",
+      "ecr:CompleteLayerUpload",
+      "ecr:BatchCheckLayerAvailability",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    sid = "ELB"
+    actions = [
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:ModifyListener",
+      "elasticloadbalancing:DescribeRules",
+      "elasticloadbalancing:ModifyRule",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    sid = "SecretsManager"
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+  statement {
+    sid = "SSM"
+    actions = [
+      "ssm:GetParameters",
+      "kms:Decrypt"
+    ]
+    resources = [
+      "*",
+    ]
+  }
+}
