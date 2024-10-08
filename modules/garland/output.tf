@@ -7,6 +7,9 @@ output "log_group" {
 output "table_name" {
   value = aws_dynamodb_table.default.name
 }
+output "dynamodb_stream_arn" {
+  value = aws_dynamodb_table.default.stream_arn
+}
 output "access_key_id_arn" {
   value = aws_ssm_parameter.access_dynamodb_access_key_id.arn
 }

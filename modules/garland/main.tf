@@ -95,7 +95,7 @@ resource "aws_dynamodb_table" "default" {
   name         = "${var.env}-${local.service_name}"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "TweetURL"
-  range_key    = "ExpireDate"
+  range_key    = "UnixTime"
 
   attribute {
     name = "TweetURL"
@@ -103,9 +103,24 @@ resource "aws_dynamodb_table" "default" {
   }
 
   attribute {
-    name = "ExpireDate"
-    type = "S"
+    name = "UnixTime"
+    type = "N"
   }
+
+  # アプリでは使うがAttributeとしては作らないカラム
+  # attribute {
+  #   name = "ExpireDate"
+  #   type = "S"
+  # }
+
+  ttl {
+    attribute_name = "UnixTime"
+    enabled        = true
+  }
+
+  # DynamoDB Streamの設定
+  stream_enabled   = true
+  stream_view_type = "NEW_IMAGE"
 }
 
 resource "aws_ssm_parameter" "access_dynamodb_access_key_id" {
