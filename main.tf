@@ -199,6 +199,7 @@ module "prd_garland_tools" {
   env                 = "prd"
   tools_bucket        = module.wanderers_info_tools.tools_bucket
   dynamodb_stream_arn = module.prd-garland.dynamodb_stream_arn
+  dynamodb_table_name = module.prd-garland.table_name
 }
 module "stg_garland_tools" {
   source = "./modules/garland_tools"
@@ -206,6 +207,7 @@ module "stg_garland_tools" {
   env                 = "stg"
   tools_bucket        = module.wanderers_info_tools.tools_bucket
   dynamodb_stream_arn = module.stg-garland.dynamodb_stream_arn
+  dynamodb_table_name = module.stg-garland.table_name
 }
 
 
