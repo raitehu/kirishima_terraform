@@ -95,6 +95,57 @@ resource "aws_scheduler_schedule" "garland_report_notifier" {
     role_arn = aws_iam_role.event_bridge.arn
   }
 }
+##########################
+#    EXPIRED NOTIFIER    #
+##########################
+data "aws_s3_object" "garland_expired_notifier_zip" {
+  bucket = var.tools_bucket
+  key    = "garland-expired-notifier/lambda_function.zip"
+}
+resource "aws_lambda_function" "garland_expired_notifier" {
+  function_name = "${var.env}-garland-expired-notifier"
+  role          = aws_iam_role.garland_report_notifier.arn # ここは共通でOK
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 30
+
+  layers = [
+    "arn:aws:lambda:ap-northeast-1:133490724326:layer:AWS-Parameters-and-Secrets-Lambda-Extension:12"
+  ]
+
+  # SourceCode
+  s3_bucket = var.tools_bucket
+  s3_key    = data.aws_s3_object.garland_expired_notifier_zip.key
+
+  # Environments
+  environment {
+    variables = {
+      ENV               = var.env
+      TABLE_NAME        = var.dynamodb_table_name
+      REGION            = "ap-northeast-1"
+      DYNAMODB_ENDPOINT = "http://dynamodb.ap-northeast-1.amazonaws.com"
+      GARLAND_URL       = local.garland_url
+    }
+  }
+}
+resource "aws_cloudwatch_log_group" "garland_expired_notifier" {
+  name              = "/aws/lambda/${aws_lambda_function.garland_expired_notifier.function_name}"
+  retention_in_days = 7
+}
+resource "aws_scheduler_schedule" "garland_expired_notifier" {
+  name                         = "${var.env}-garland-expired-notifier"
+  schedule_expression          = "cron(15 * * * ? *)"
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = aws_lambda_function.garland_expired_notifier.arn
+    role_arn = aws_iam_role.event_bridge.arn
+  }
+}
 
 #############
 #    IAM    #
