@@ -41,6 +41,10 @@ resource "aws_scheduler_schedule" "healthcheck" {
     arn      = aws_lambda_function.healthcheck.arn
     role_arn = aws_iam_role.event_bridge.arn
   }
+
+  lifecycle {
+    ignore_changes = [state]
+  }
 }
 
 #############################
@@ -76,6 +80,10 @@ resource "aws_scheduler_schedule" "tidy_up" {
   target {
     arn      = aws_lambda_function.tidy_up.arn
     role_arn = aws_iam_role.event_bridge.arn
+  }
+
+  lifecycle {
+    ignore_changes = [state]
   }
 }
 
@@ -115,12 +123,17 @@ resource "aws_scheduler_schedule" "garland_daily" {
   flexible_time_window {
     mode = "OFF"
   }
+
   target {
     arn      = aws_lambda_function.call_backend.arn
     role_arn = aws_iam_role.event_bridge.arn
     input = jsonencode({
       function = "/v1/garland/daily/"
     })
+  }
+
+  lifecycle {
+    ignore_changes = [state]
   }
 }
 resource "aws_scheduler_schedule" "garland_soon_expiry" {
@@ -131,12 +144,17 @@ resource "aws_scheduler_schedule" "garland_soon_expiry" {
   flexible_time_window {
     mode = "OFF"
   }
+
   target {
     arn      = aws_lambda_function.call_backend.arn
     role_arn = aws_iam_role.event_bridge.arn
     input = jsonencode({
       function = "/v1/garland/soon-expiry/"
     })
+  }
+
+  lifecycle {
+    ignore_changes = [state]
   }
 }
 resource "aws_scheduler_schedule" "wiki_update_notify" {
@@ -147,12 +165,17 @@ resource "aws_scheduler_schedule" "wiki_update_notify" {
   flexible_time_window {
     mode = "OFF"
   }
+
   target {
     arn      = aws_lambda_function.call_backend.arn
     role_arn = aws_iam_role.event_bridge.arn
     input = jsonencode({
       function = "/v1/wiki/update-notify/"
     })
+  }
+
+  lifecycle {
+    ignore_changes = [state]
   }
 }
 

@@ -94,6 +94,10 @@ resource "aws_scheduler_schedule" "garland_report_notifier" {
     arn      = aws_lambda_function.garland_report_notifier.arn
     role_arn = aws_iam_role.event_bridge.arn
   }
+
+  lifecycle {
+    ignore_changes = [state]
+  }
 }
 
 ##########################
@@ -146,6 +150,10 @@ resource "aws_scheduler_schedule" "garland_expired_notifier" {
     arn      = aws_lambda_function.garland_expired_notifier.arn
     role_arn = aws_iam_role.event_bridge.arn
   }
+
+  lifecycle {
+    ignore_changes = [state]
+  }
 }
 
 ##############################
@@ -195,6 +203,10 @@ resource "aws_scheduler_schedule" "wiki_update_notifier" {
   target {
     arn      = aws_lambda_function.wiki_update_notifier.arn
     role_arn = aws_iam_role.event_bridge.arn
+  }
+
+  lifecycle {
+    ignore_changes = [state]
   }
 }
 
@@ -333,6 +345,7 @@ data "aws_iam_policy_document" "invoke_tools" {
     ]
     resources = [
       aws_lambda_function.garland_report_notifier.arn,
+      aws_lambda_function.garland_expired_notifier.arn,
     ]
   }
 }
