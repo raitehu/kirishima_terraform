@@ -346,6 +346,7 @@ data "aws_iam_policy_document" "invoke_tools" {
     resources = [
       aws_lambda_function.garland_report_notifier.arn,
       aws_lambda_function.garland_expired_notifier.arn,
+      aws_lambda_function.wiki_update_notifier.arn,
     ]
   }
 }
