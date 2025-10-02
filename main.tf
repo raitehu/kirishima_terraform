@@ -212,6 +212,7 @@ module "wanderers_info_tools" {
 
   tags                       = local.wanderers_info.tags
   wanderers_info_backend_url = var.wanderers_info_backend_url
+  return_me_tags_bucket_arn  = module.s3_return_me_tags.bucket_arn
 }
 module "prd_garland_tools" {
   source = "./modules/garland_tools"

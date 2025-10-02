@@ -303,7 +303,10 @@ data "aws_iam_policy_document" "oidc_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:raitehu/wanderers_info_tools:*"]
+      values   = [
+        "repo:raitehu/wanderers_info_tools:*",
+        "repo:raitehu/return-me-tags:*"
+      ]
     }
   }
 }
@@ -318,7 +321,9 @@ data "aws_iam_policy_document" "deploy_tools" {
     ]
     resources = [
       aws_s3_bucket.tools.arn,
-      "${aws_s3_bucket.tools.arn}/*"
+      "${aws_s3_bucket.tools.arn}/*",
+      var.return_me_tags_bucket_arn,
+      "${var.return_me_tags_bucket_arn}/*"
     ]
   }
 }
