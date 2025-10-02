@@ -22,10 +22,12 @@ module "vpc" {
 module "route53" {
   source = "./modules/route53"
 
-  web_front_alb_dns_name    = module.app_network.web_front_alb_dns_name
-  web_front_alb_zone_id     = module.app_network.web_front_alb_zone_id
-  cloudfront_yakan_dns_name = module.yakan_network.cloudfront_dns_name
-  cloudfront_yakan_zone_id  = module.yakan_network.cloudfront_zone_id
+  web_front_alb_dns_name             = module.app_network.web_front_alb_dns_name
+  web_front_alb_zone_id              = module.app_network.web_front_alb_zone_id
+  cloudfront_yakan_dns_name          = module.yakan_network.cloudfront_dns_name
+  cloudfront_yakan_zone_id           = module.yakan_network.cloudfront_zone_id
+  cloudfront_return_me_tags_dns_name = module.cloudfront_return_me_tags.cloudfront_dns_name
+  cloudfront_return_me_tags_zone_id  = module.cloudfront_return_me_tags.cloudfront_zone_id
 }
 module "parameter_stores" {
   source = "./modules/parameter_stores"
@@ -87,6 +89,24 @@ module "s3_yakan" {
   source = "./modules/s3_via_cloudfront"
 
   bucket = "yakan-static"
+}
+
+########################
+#     ReturnMeTags     #
+########################
+module "cloudfront_return_me_tags" {
+  source = "./modules/return_me_tags"
+
+  s3_bucket_id_return_me_tags          = module.s3_return_me_tags.bucket_id
+  s3_bucket_domain_name_return_me_tags = module.s3_return_me_tags.bucket_domain_name
+  s3_OAI_path_return_me_tags           = module.s3_return_me_tags.OAI_access_identity_path
+  acm_certificate_arn                  = var.raitehu_acm_arn_in_us
+}
+
+module "s3_return_me_tags" {
+  source = "./modules/s3_via_cloudfront"
+
+  bucket = "return-me-tags-static"
 }
 
 #################

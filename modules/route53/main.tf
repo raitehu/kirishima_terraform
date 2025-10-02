@@ -88,3 +88,14 @@ resource "aws_route53_record" "raitehu_A_garland_stg" {
     evaluate_target_health = true
   }
 }
+resource "aws_route53_record" "return_me_tags" {
+  zone_id = aws_route53_zone.raitehu.zone_id
+  name    = "returnmetags.raitehu.com"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_return_me_tags_dns_name
+    zone_id                = var.cloudfront_return_me_tags_zone_id
+    evaluate_target_health = true
+  }
+}
