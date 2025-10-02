@@ -10,3 +10,9 @@ variable "cloudfront_yakan_dns_name" {
 variable "cloudfront_yakan_zone_id" {
   type = string
 }
+variable "cloudfront_return_me_tags_dns_name" {
+  type = string
+}
+variable "cloudfront_return_me_tags_zone_id" {
+  type = string
+}

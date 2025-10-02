@@ -14,3 +14,6 @@ variable "pleiades_union_acm_arn" {
 variable "raitehu_acm_arn" {
   type = string
 }
+variable "raitehu_acm_arn_in_us" {
+  type = string
+}
