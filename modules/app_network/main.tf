@@ -113,7 +113,7 @@ resource "aws_lb_listener_rule" "moneybook" {
 
   condition {
     host_header {
-      values = ["money-book.pleiades-union.com"]
+      values = ["money-book.raitehu.com"]
     }
   }
 
@@ -370,7 +370,7 @@ resource "aws_lb_listener_rule" "mukai" {
   }
 }
 
-# money-book.pleiades-union.com/ -> money-book.pleiades-union.com/login
+# money-book.raitehu.com/ -> money-book.raitehu.com/login
 resource "aws_lb_listener_rule" "moneybook_root" {
   listener_arn = aws_lb_listener.https.arn
   priority     = 60
@@ -390,7 +390,7 @@ resource "aws_lb_listener_rule" "moneybook_root" {
 
   condition {
     host_header {
-      values = ["money-book.pleiades-union.com"]
+      values = ["money-book.raitehu.com"]
     }
   }
   condition {

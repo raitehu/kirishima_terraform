@@ -52,8 +52,8 @@ resource "aws_route53_record" "pleiades_union_A_www" {
   }
 }
 resource "aws_route53_record" "moneybook" {
-  zone_id = aws_route53_zone.pleiades.zone_id
-  name    = "money-book.pleiades-union.com"
+  zone_id = aws_route53_zone.raitehu.zone_id
+  name    = "money-book.raitehu.com"
   type    = "A"
 
   alias {
